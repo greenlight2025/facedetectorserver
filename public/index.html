@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>人脸颜值检测</title>
+  <style>
+    body { margin: 2rem; font-family: system-ui, sans-serif; }
+    .container { max-width: 600px; margin: 0 auto; }
+    #result {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      white-space: pre-line;
+      background: #f9f9f9;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      background: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 人脸颜值检测</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="detectFace()">开始检测</button>
+    <div id="result">结果将显示在这里...</div>
+  </div>
+
+  <script>
+    async function detectFace() {
+      const file = document.getElementById('imageInput').files[0];
+      const resultEl = document.getElementById('result');
+      if (!file) { alert('请选择图片'); return; }
+      resultEl.textContent = '🔄 检测中...';
+
+      try {
+        // 1. 转 Base64
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+
+        // 2. 调用 Netlify 函数
+        const res = await fetch('/.netlify/functions/api/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64 })
+        });
+
+        const data = await res.json();
+        resultEl.textContent = data.parsed || '检测完成';
+      } catch (err) {
+        resultEl.textContent = `❌ 错误：${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
